@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: task-tiles-postgres
+    environment:
+      POSTGRES_DB: task_tiles
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - task-tiles-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d task_tiles"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./task-tiles-backend
+      dockerfile: Dockerfile
+    container_name: task-tiles-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=task_tiles
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - task-tiles-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./task-tiles-frontend
+      dockerfile: Dockerfile
+    container_name: task-tiles-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - task-tiles-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  task-tiles-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+
+# Optional: Add volumes for persistent data
+# volumes:
+#   task-tiles-data:
+#     driver: local 
