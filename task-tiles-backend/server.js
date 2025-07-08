@@ -22,6 +22,7 @@ const {
 const boardRoutes = require('./routes/boardRoutes');
 const columnRoutes = require('./routes/columnRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const aiAgentRoutes = require('./routes/aiAgent');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +56,7 @@ const initializeApp = async () => {
 app.use('/api/boards', boardRoutes);
 app.use('/api/columns', columnRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/ai-agent', aiAgentRoutes);
 
 // Legacy column routes (maintain backward compatibility)
 app.use('/api/boards/:id/columns', (req, res, next) => {
@@ -116,6 +118,10 @@ app.get('/api', (req, res) => {
         'PUT /api/tasks/:id': 'Update a task',
         'DELETE /api/tasks/:id': 'Delete a task',
         'POST /api/tasks/:id/move': 'Move a task between columns'
+      },
+      aiAgent: {
+        'POST /api/ai-agent/chat': 'Chat with AI agent for task management',
+        'GET /api/ai-agent/history/:boardId': 'Get conversation history for a board'
       }
     },
     documentation: 'https://github.com/your-repo/task-tiles-backend'
